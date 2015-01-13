@@ -32,9 +32,12 @@ void loop()
     char a = Serial.read();
     if(a=='s')
     {
-      myshutter.shotOn();
+      myshutter.focusOn();
       delay(1000);
+      myshutter.shotOn();
+      delay(200);
       myshutter.shotOff();
+      myshutter.focusOff();
     }
     if(a=='f')
     {

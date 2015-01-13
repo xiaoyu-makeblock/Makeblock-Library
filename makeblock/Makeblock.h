@@ -1,4 +1,4 @@
-///@file Makeblock.h head file of Makeblock Library V2.1
+///@file Makeblock.h head file of Makeblock Library V2.1.0916
 ///Define the interface of Makeblock Library
 
 //#include <inttypes.h>
@@ -10,14 +10,27 @@
 #include <SoftwareSerial.h>
 #include <Wire.h>
 #include <avr/interrupt.h>
+#include <avr/io.h>
+#ifndef F_CPU
+#define  F_CPU 16000000UL
+#endif
+#include <util/delay.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-///@brief Struct of MePort_Sig
 typedef struct
 {
     uint8_t s1;
     uint8_t s2;
 } MePort_Sig;
 extern MePort_Sig mePort[11];//mePort[0] is nonsense
+
+struct cRGB
+{
+    uint8_t g;
+    uint8_t r;
+    uint8_t b;
+};
 
 #define NC 					-1
 
@@ -32,13 +45,16 @@ extern MePort_Sig mePort[11];//mePort[0] is nonsense
 #define M1     				0x09
 #define M2     				0x0a
 
-#define DEV1 				1
-#define DEV2 				2
-
-// buzzer 
+#define SLOT1 				1
+#define SLOT2 				2
+#if defined(__AVR_ATmega32U4__)
+// buzzer
 #define buzzerOn()  DDRE |= 0x04,PORTE |= B00000100
 #define buzzerOff() DDRE |= 0x04,PORTE &= B11111011
-
+#else
+#define buzzerOn()  pinMode(SCL,OUTPUT),digitalWrite(SCL, HIGH)
+#define buzzerOff() pinMode(SCL,OUTPUT),digitalWrite(SCL, LOW)
+#endif
 
 //states of two linefinder sensors
 
@@ -67,7 +83,6 @@ extern MePort_Sig mePort[11];//mePort[0] is nonsense
 #define LS_SET_COUNT 		0x07
 #define LS_SET_IN_SPEED 	0x08
 
-
 #define LS_RUN_CTRL 0x1A
 #define LS_LED_COUNT        0x1B
 
@@ -87,86 +102,29 @@ extern MePort_Sig mePort[11];//mePort[0] is nonsense
 #define IN_SPEED 			2
 
 
-//stepper
-//address table
-#define STP_RUN_STATE 		0x91
-#define STP_SPEED_RL1 		0x92
-#define STP_SPEED_RL2 		0x93
-#define STP_SPEED_RH1 		0x94
-#define STP_SPEED_RH2 		0x95
-#define STP_DIS_TOGO_RL1 	0x96
-#define STP_DIS_TOGO_RL2 	0x97
-#define STP_DIS_TOGO_RH1 	0x98
-#define STP_DIS_TOGO_RH2 	0x99
-#define STP_TARGET_POS_RL1 	0x9A
-#define STP_TARGET_POS_RL2 	0x9B
-#define STP_TARGET_POS_RH1 	0x9C
-#define STP_TARGET_POS_RH2 	0x9D
-#define STP_CURRENT_POS_RL1 0x9E
-#define STP_CURRENT_POS_RL2 0x9F
-#define STP_CURRENT_POS_RH1 0xA0
-#define STP_CURRENT_POS_RH2 0xA1
-
-
-#define STP_ACC_L1 			0x01 //This is an expensive call since it requires a square root to be calculated. Don't call more ofthen than needed.
-#define STP_ACC_L2 			0x02
-#define STP_ACC_H1 			0x03
-#define STP_ACC_H2 			0x04
-#define STP_MAX_SPEED_L1 	0x05
-#define STP_MAX_SPEED_L2 	0x06
-#define STP_MAX_SPEED_H1 	0x07
-#define STP_MAX_SPEED_H2 	0x08
-#define STP_SPEED_L1 		0x09
-#define STP_SPEED_L2 		0x0A
-#define STP_SPEED_H1 		0x0B
-#define STP_SPEED_H2 		0x0C
-#define STP_MOVE_TO_L1 		0x0D
-#define STP_MOVE_TO_L2 		0x0E
-#define STP_MOVE_TO_H1 		0x0F
-#define STP_MOVE_TO_H2 		0x10
-#define STP_MOVE_L1 		0x11
-#define STP_MOVE_L2 		0x12
-#define STP_MOVE_H1 		0x13
-#define STP_MOVE_H2 		0x14
-#define STP_CURRENT_POS_L1 	0x15
-#define STP_CURRENT_POS_L2 	0x16
-#define STP_CURRENT_POS_H1 	0x17
-#define STP_CURRENT_POS_H2 	0x18
-
-#define STP_RUN_CTRL 		0x1C
-#define STP_EN_CTRL 		0x1D
-#define STP_SLEEP_CTRL 		0x1F
-#define STP_MS_CTRL 		0x20
-#define LS_SET_ST_ADD 		0x21
-
-
-//data table
-#define STP_RUN 			0x01
-#define STP_STOP 			0x02
-#define STP_WAIT 			0x03
-#define STP_RESET_CTRL 		0x04
-#define STP_RUN_SPEED 		0x05
-#define STP_TRUE 			0x01
-#define STP_FALSE 			0x00
-#define STP_ENABLE 			0x01
-#define STP_DISABLE 		0x02
-#define STP_FULL 			0x01
-#define STP_HALF 			0x02
-#define STP_QUARTER 		0x04
-#define STP_EIGHTH 			0x08
-#define STP_SIXTEENTH 		0x16
 
 //NEC Code table
 #define IR_BUTTON_POWER 	0x45
+#define IR_BUTTON_A 		0x45
+#define IR_BUTTON_B 		0x46
 #define IR_BUTTON_MENU 		0x47
+#define IR_BUTTON_C 		0x47
 #define IR_BUTTON_TEST 		0x44
+#define IR_BUTTON_D 		0x44
 #define IR_BUTTON_PLUS 		0x40
+#define IR_BUTTON_UP 		0x40
 #define IR_BUTTON_RETURN 	0x43
+#define IR_BUTTON_E 		0x43
 #define IR_BUTTON_PREVIOUS 	0x07
+#define IR_BUTTON_LEFT 		0x07
 #define IR_BUTTON_PLAY 		0x15
+#define IR_BUTTON_SETTING 	0x15
 #define IR_BUTTON_NEXT 		0x09
+#define IR_BUTTON_RIGHT 	0x09
 #define IR_BUTTON_MINUS 	0x19
+#define IR_BUTTON_DOWN 		0x19
 #define IR_BUTTON_CLR 		0x0D
+#define IR_BUTTON_F 		0x0D
 #define IR_BUTTON_0 		0x16
 #define IR_BUTTON_1 		0x0C
 #define IR_BUTTON_2 		0x18
@@ -194,6 +152,22 @@ extern MePort_Sig mePort[11];//mePort[0] is nonsense
 #define KEY3_VALUE  		648//1024/3*2
 #define KEY4_VALUE  		729//1024/4*3
 
+#define FALSE 0
+#define TRUE  1
+
+// Platform specific I/O definitions
+
+#if defined(__AVR__)
+#define MePIN_TO_BASEREG(pin)             (portInputRegister(digitalPinToPort(pin)))
+#define MePIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define MeIO_REG_TYPE uint8_t
+#define MeIO_REG_ASM asm("r30")
+#define MeDIRECT_READ(base, mask)         (((*(base)) & (mask)) ? 1 : 0)
+#define MeDIRECT_MODE_INPUT(base, mask)   ((*((base)+1)) &= ~(mask)),((*((base)+2)) |= (mask))//INPUT_PULLUP
+#define MeDIRECT_MODE_OUTPUT(base, mask)  ((*((base)+1)) |= (mask))
+#define MeDIRECT_WRITE_LOW(base, mask)    ((*((base)+2)) &= ~(mask))
+#define MeDIRECT_WRITE_HIGH(base, mask)   ((*((base)+2)) |= (mask))
+#endif
 
 static bool _isServoBusy = false;
 
@@ -201,6 +175,7 @@ static bool _isServoBusy = false;
 class MePort
 {
 public:
+    MePort();
     ///@brief initialize the Port
     ///@param port port number of device
     MePort(uint8_t port);
@@ -208,98 +183,51 @@ public:
     ///@retval true on HIGH.
     ///@retval false on LOW.
     uint8_t getPort();
-
+    uint8_t getSlot();
     ///@return the level of pin 1 of port
     ///@retval true on HIGH.
     ///@retval false on LOW.
-    bool Dread1();
+    bool dRead1();
     ///@return the level of pin 2 of port
     ///@retval true on HIGH.
     ///@retval false on LOW.
-    bool Dread2();
-    ///@brief set the analog value of pin 1 of port
-    ///@param value is HIGH or LOW
-    void Dwrite1(bool value);
+    bool dRead2();
     ///@brief set the level of pin 1 of port
     ///@param value is HIGH or LOW
-    void Dwrite2(bool value);
+    void dWrite1(bool value);
+    ///@brief set the level of pin 2 of port
+    ///@param value is HIGH or LOW
+    void dWrite2(bool value);
     ///@return the analog signal of pin 1 of port between 0 to 1023
-    int Aread1();
+    int aRead1();
     ///@return the analog signal of pin 2 of port between 0 to 1023
-    int Aread2();
+    int aRead2();
     ///@brief set the PWM outpu value of pin 1 of port
     ///@param value between 0 to 255
-    void Awrite1(int value);
+    void aWrite1(int value);
     ///@brief set the PWM outpu value of pin 2 of port
     ///@param value between 0 to 255
-    void Awrite2(int value);
-
+    void aWrite2(int value);
+    uint8_t pin1();
+    uint8_t pin2();
+    void reset(uint8_t port);
+    void reset(uint8_t port, uint8_t slot);
 protected:
     uint8_t s1;
     uint8_t s2;
     uint8_t _port;
+    uint8_t _slot;
 };
-///@brief Struct of MeParamObject
-typedef struct MeParamObject
-{
-    char *name;
-    int type;
-    struct MeParamObject *next, *prev;
-    struct MeParamObject *child;
-    union
-    {
-        char *code;
-        double value;
-    };
-} MeParamObject;
 
-///@brief class of MeParams
-class MeParams
-{
-public:
-    ///@brief initialize
-    MeParams();
-    ///@brief get the param object with name.
-    ///@param string param name
-    ///@return MeParamObject.
-    MeParamObject *getParam(const char *string);
-    ///@brief get double value of the param with name.
-    ///@param string param name.
-    ///@return double value.
-    double getParamValue(const char *string);
-    ///@brief get string value of the param with name.
-    ///@param string param name
-    ///@return string value.
-    char *getParamCode(const char *string);
-    ///@brief set string/double value of the param with name.
-    ///@param string param name
-	///@param string string value
-    void setParam(char *name, char *n);
-    ///@brief parse the format string to object.
-    ///@param string the format string,like "a=12.45&b=hello"
-    void parse(char* s);
-    ///@brief remove all from object.
-    void clear();
-protected:
-    MeParamObject *_root;
-    void suffixObject(MeParamObject *prev, MeParamObject *item);
-    void addItemToObject( char *string, MeParamObject *item);
-    void deleteParam( char *string);
-    void deleteItemFromRoot(MeParamObject *c);
-    MeParamObject *detachItemFromObject(  char *string);
-    void deleteItemFromArray(unsigned char which);
-    MeParamObject *detachItemFromArray(unsigned char which);
-    MeParamObject *createObject();
-    MeParamObject *createItem(double n);
-    MeParamObject *createCharItem(char *n);
-};
 ///@brief class of MeSerial
-class MeSerial: public SoftwareSerial,public MePort
+class MeSerial: public SoftwareSerial, public MePort
 {
 public:
+    MeSerial();
     ///@brief initialize
     ///@param port port number of device
     MeSerial(uint8_t port);
+    void setHardware(bool mode);
     ///@brief Sets the data rate in bits per second (baud) for serial data transmission.
     ///@param baudrate use one of these rates: 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, or 115200.
     void begin(long baudrate);
@@ -310,24 +238,14 @@ public:
     int read();
     ///@brief Get the number of bytes (characters) available for reading from the serial port. This is data that's already arrived and stored in the serial receive buffer (which holds 64 bytes).
     int available();
-    ///@brief Get the param string available for reading from the serial port.
-    bool paramAvailable();
-    ///@brief Get the param object with the param available
-    ///@return MeParams, the param string example:"motor_speed=100&servo_angle=45.4"
     int poll();
-    MeParams getParams();
-    double getParamValue(char *str);
-    char *getParamCode(char *str);
+    void end();
     bool listen();
     bool isListening();
 protected:
-    MeParams _params;
-    void findParamName(char *str, int len);
-    void findParamValue(char *str, int len, char *name);
-    char _cmds[64];
-    int _index;
     bool _hard;
     bool _polling;
+    bool _scratch;
     int _bitPeriod;
     int _byte;
     long _lastTime;
@@ -336,44 +254,49 @@ protected:
 class MeWire: public MePort
 {
 public:
+    MeWire(uint8_t address);
     ///@brief initialize
     ///@param port port number of device
-    MeWire(uint8_t port, uint8_t selector);
+    MeWire(uint8_t port, uint8_t address);
     ///@brief reset start index of i2c slave address.
-    void setSelectorIndex(uint8_t selectorIndex);
+    void setI2CBaseAddress(uint8_t baseAddress);
     bool isRunning();
     ///@brief Initiate the Wire library and join the I2C bus as a master or slave. This should normally be called only once.
     ///@param address the 7-bit slave address (optional); if not specified, join the bus as a master.
     void begin();
     ///@brief send one byte data request for read one byte from slave address.
     byte read(byte dataAddress);
-    void read(byte dataAddress,uint8_t *buf,int len);
+    void read(byte dataAddress, uint8_t *buf, int len);
     ///@brief send one byte data request for write one byte to slave address.
     void write(byte dataAddress, byte data);
+    void request(byte *writeData, byte *readData, int wlen, int rlen);
 protected:
     int _slaveAddress;
 };
 
 
-///@brief Class for LineFinder Module
-class MeLineFinder: public MePort
+///@brief Class for Line Follower Module
+class MeLineFollower: public MePort
 {
 public:
+    MeLineFollower();
     ///@brief initialize
-    MeLineFinder(uint8_t port);
+    MeLineFollower(uint8_t port);
     ///@brief state of all sensors
     ///@return state of sensors
-    int readSensors();
+    uint8_t readSensors();
     ///@brief state of left sensors
-    int readSensor1();
+    bool readSensor1();
     ///@brief state of right sensors
-    int readSensor2();
+    bool readSensor2();
 };
 ///@brief Class for Limit Switch Module
 class MeLimitSwitch: public MePort
 {
 public:
-    MeLimitSwitch(uint8_t port,uint8_t device);
+    MeLimitSwitch();
+    MeLimitSwitch(uint8_t port);
+    MeLimitSwitch(uint8_t port, uint8_t slot);
     bool touched();
 private:
     uint8_t _device;
@@ -383,15 +306,17 @@ private:
 class MeUltrasonicSensor: public MePort
 {
 public :
+    MeUltrasonicSensor();
     MeUltrasonicSensor(uint8_t port);
-    long distanceCm();
-    long distanceInch();
-    long measure();
+    double distanceCm(uint16_t = 400);
+    double distanceInch(uint16_t = 180);
+    long measure(unsigned long = 30000);
 };
 ///@brief Class for DC Motor Module
 class MeDCMotor: public MePort
 {
 public:
+    MeDCMotor();
     MeDCMotor(uint8_t port);
     void run(int speed);
     void stop();
@@ -400,6 +325,7 @@ public:
 class MeShutter: public MePort
 {
 public:
+    MeShutter();
     MeShutter(uint8_t port);
     void shotOn();
     void shotOff();
@@ -410,279 +336,282 @@ public:
 class MeBluetooth: public MeSerial
 {
 public:
+    MeBluetooth();
     MeBluetooth(uint8_t port);
 };
 ///@brief Class for Infrared Receiver Module
 class MeInfraredReceiver: public MeSerial
 {
 public:
+    MeInfraredReceiver();
     MeInfraredReceiver(uint8_t port);
     void begin();
+    int read();
     ///@brief check press state of button
     bool buttonState();
 };
-///@brief class for Led Strip Module
-class MeLedStrip : public MeWire
+///@brief Class for RGB Led Module(http://www.makeblock.cc/me-rgb-led-v1-0/) and Led Strip(http://www.makeblock.cc/led-rgb-strip-addressable-sealed-1m/)
+class MeRGBLed: public MePort
 {
 public:
-    ///@brief initialize,portNum can ONLY be PORT_1 or PORT_2
-    MeLedStrip(uint8_t port, uint8_t selector);
-
-    ///@brief start ledStrip Driver and set the led quantity. (value: 1-60)
-    void begin(int ledCount);
-
-    ///@brief Automatic cycle refresh each LED. After perform this function, the led refresh automatically.You can set the reflash time. Max value = 255.
-    void autoFlash(int flashSpeed = 0);
-
-    ///@brief Refresh once LED, Entirely by the loop function to refresh the LED Strip. When you need to write multiple leds,use the LS_ONCE_FLASH mode to refresh all LED when writing the last LED, in front of the led use LS_NO_FLASH mode,it can speed up the refresh.
-    void onceFlash();
-
-    ///@brief Stop all led of strip. But it doesn't close the leds. All LED to keep the last state.
-    void stopFlash();
-
-    ///@brief Stop and reset all led of strip.
-    void reset();
-
-    bool readState();
-
-    ///@brief Write each LED color and refresh mode.
-    ///@param lsNum LED Number
-    ///@param lsR Red brightness
-    ///@param lsG Green brightness
-    ///@param lsB Blue brightness
-    ///@param lsMode LS_AUTO_FLASH : Automatic cycle refresh each LED. After perform this function, the led refresh automatically.This mode is not commonly used.LS_ONCE_FLASH : Please refer to the instructions of onceFlash().
-    void setPixelColor(byte lsNum = LS_ALL_PIXEL, byte lsR = MIN_BRI, byte lsG = MIN_BRI, byte lsB = MIN_BRI, byte lsMode = LS_ONCE_FLASH);
-
-    //long getPixelColor(byte n);
-
-    ///@brief Color gradient LED Scroller function.Automatically refresh after initialization, you can use stopFlash() to stop flash, but it doesn't close leds.use the reset() to stop and reset led.
-    void color_loop();
-
-    ///@brief This is an indicator function that is used to display range quickly.
-    ///@param lsNum LED Number
-    ///@param lsR Red brightness
-    ///@param lsG Green brightness
-    ///@param lsB Blue brightness
-    ///@param lsSpd Indicators flash speed
-    void indicators(byte lsNum, byte lsR, byte lsG, byte lsB, byte lsSpd = IN_SPEED);
-};
-///@brief Class for Stepper Motor Driver
-class MeStepperMotor: public MeWire
-{
-public:
-    ///@brief initialize,portNum can ONLY be PORT_1 or PORT_2
-    MeStepperMotor(uint8_t port, uint8_t selector);
-
-    ///@brief start stepper driver.
-    void begin(byte microStep = STP_SIXTEENTH, long speed = 10000, long acceleration = 5000);
-
-    ///@brief set micro step.
-    ///@param microStep STP_FULL, STP_HALF, STP_QUARTER, STP_EIGHTH, STP_SIXTEENTH
-    void setMicroStep(byte microStep);
-
-    ///@brief stop stepper and reset current position to zero.
-    void reset();
-
-    ///@brief Set the target position. The run() function will try to move the motor from the current position to the target position set by the most recent call to this function. Caution: moveTo() also recalculates the speed for the next step. If you are trying to use constant speed movements, you should call setSpeed() after calling moveTo().
-    ///@param stepperMoveTo absolute The desired absolute position. Negative is anticlockwise from the 0 position.
-    void moveTo(long stepperMoveTo);
-
-    ///@brief Set the target position relative to the current position
-    ///@param stepperMove relative The desired position relative to the current position.Negative is anticlockwise from the current position.
-    void move(long stepperMove);
-
-    ///@brief Poll the motor and step it if a step is due, implmenting a constant speed as set by the most recent call to setSpeed(). You must call this as frequently as possible, but at least once per step interval,
-    void runSpeed();
-
-    ///@brief Sets the maximum permitted speed. the run() function will accelerate up to the speed set by this function.
-    ///@param stepperMaxSpeed speed The desired maximum speed in steps per second. Must be > 0. Caution: Speeds that exceed the maximum speed supported by the processor may Result in non-linear accelerations and decelerations.
-    void setMaxSpeed(long stepperMaxSpeed);
-
-    ///@brief Sets the acceleration and deceleration parameter.
-    ///@param stepperAcceleration acceleration The desired acceleration in steps per second per second. Must be > 0.0. This is an expensive call since it requires a square root to be calculated. Dont call more ofthen than needed
-    void setAcceleration(long stepperAcceleration);
-
-    ///@brief Sets the desired constant speed for use with runSpeed().
-    ///@param stepperSpeed speed The desired constant speed in steps per second. Positive is clockwise. Speeds of more than 1000 steps per second are unreliable. Very slow speeds may be set (eg 0.00027777 for once per hour, approximately. Speed accuracy depends on the Arduino crystal. Jitter depends on how frequently you call the runSpeed() function.
-    void setSpeed(long stepperSpeed);
-
-    ///@brief The most recently set speed
-    ///@return the most recent speed in steps per second
-    long speed();
-
-    ///@brief The distance from the current position to the target position.
-    ///@return the distance from the current position to the target position in steps.Positive is clockwise from the current position.
-    long distanceToGo();
-
-    ///@brief The most recently set target position.
-    ///@return the target position in steps. Positive is clockwise from the 0 position.
-    long targetPosition();
-
-    ///@brief The currently motor position.
-    ///@return the current motor position in steps. Positive is clockwise from the 0 position.
-    long currentPosition();
-
-    ///@brief Resets the current position of the motor, so that wherever the motor happens to be right now is considered to be the new 0 position. Useful for setting a zero position on a stepper after an initial hardware positioning move.Has the side effect of setting the current motor speed to 0.
-    ///@param stepperCurrentPos position The position in steps of wherever the motor happens to be right now.
-    void setCurrentPosition(long stepperCurrentPos);
-
-    ///@brief enable stepper driver, Keep the micro step current position.
-    void enable();
-
-    ///@brief disable stepper driver, release the stepper.
-    void disable();
-
-    ///@brief output pulse
-    void run();
-
-    ///@brief Sets a new target position that causes the stepper to stop as quickly as possible, using to the current speed and acceleration parameters.
-    void stop();
-
-    ///@brief stop all dispose, keep the user setting data.
-    void wait();
-
-    bool readState();
+    MeRGBLed();
+    MeRGBLed(uint8_t port);
+    MeRGBLed(uint8_t port, uint8_t slot);
+    ~MeRGBLed();
+    void reset(uint8_t port);
+    ///@brief set the count of leds.
+    void setNumber(uint8_t num_led);
+    ///@brief get the count of leds.
+    uint8_t getNumber();
+    ///@brief get the rgb value of the led with the index.
+    cRGB getColorAt(uint8_t index);
+    ///@brief set the rgb value of the led with the index.
+    bool setColorAt(uint8_t index, uint8_t red, uint8_t green, uint8_t blue);
+    bool setColorAt(uint8_t index, long value);
+    void clear();
+    ///@brief become effective of all led's change.
+    void show();
 
 private:
-    long stepperSpeedRead;
-    long stepperDistanceToGoRead;
-    long stepperTargetPositionRead;
-    long stepperCurrentPositionRead;
+    uint16_t count_led;
+    uint8_t *pixels;
+
+    void rgbled_sendarray_mask(uint8_t *array, uint16_t length, uint8_t pinmask, uint8_t *port);
+
+    const volatile uint8_t *ws2812_port;
+    volatile uint8_t *ws2812_port_reg;
+    uint8_t pinMask;
 };
 
-#if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
-#define _useTimer5
-#define _useTimer1
-#define _useTimer3
-#define _useTimer4
-typedef enum { _timer5, _timer1, _timer3, _timer4, _Nbr_16timers } timer16_Sequence_t ;
-
-#elif defined(__AVR_ATmega32U4__)
-#define _useTimer1
-typedef enum { _timer1, _Nbr_16timers } timer16_Sequence_t ;
-
-#elif defined(__AVR_AT90USB646__) || defined(__AVR_AT90USB1286__)
-#define _useTimer3
-#define _useTimer1
-typedef enum { _timer3, _timer1, _Nbr_16timers } timer16_Sequence_t ;
-
-#elif defined(__AVR_ATmega128__) ||defined(__AVR_ATmega1281__)||defined(__AVR_ATmega2561__)
-#define _useTimer3
-#define _useTimer1
-typedef enum { _timer3, _timer1, _Nbr_16timers } timer16_Sequence_t ;
-
-#else  // everything else
-#define _useTimer1
-typedef enum { _timer1, _Nbr_16timers } timer16_Sequence_t ;
-#endif
-
-#define Servo_VERSION           2      // software version of this library
-
-#define MIN_PULSE_WIDTH       500     // the shortest pulse sent to a servo  
-#define MAX_PULSE_WIDTH      2500     // the longest pulse sent to a servo 
-#define DEFAULT_PULSE_WIDTH  1500     // default pulse width when servo is attached
-#define REFRESH_INTERVAL    20000     // minumim time to refresh servos in microseconds 
-
-#define SERVOS_PER_TIMER       12     // the maximum number of servos controlled by one timer 
-#define MAX_SERVOS   (_Nbr_16timers  * SERVOS_PER_TIMER)
-
-#define INVALID_SERVO         255     // flag indicating an invalid servo index
-
-typedef struct
-{
-    uint8_t nbr        : 6 ;            // a pin number from 0 to 63
-    uint8_t isActive   : 1 ;            // true if this channel is enabled, pin not pulsed if false
-} ServoPin_t   ;
-
-typedef struct
-{
-    ServoPin_t Pin;
-    unsigned int ticks;
-} servo_t;
-
-///@brief Class for Servo Module
-class MeServo: public MePort
-{
-public:
-    MeServo(uint8_t port, uint8_t device);
-    ///@brief attach the given pin to the next free channel, sets pinMode, returns channel number or 0 if failure
-    uint8_t begin();
-    ///@brief as above but also sets min and max values for writes.
-    uint8_t begin(int min, int max);
-    void detach();
-    ///@brief if value is < 180 its treated as an angle, otherwise as pulse width in microseconds
-    void write(int value);
-    ///@brief Write pulse width in microseconds
-    void writeMicroseconds(int value);
-    ///@brief current pulse width as an angle between 0 and 180 degrees
-    ///@return angle between 0 and 180 degrees
-    int read();
-    ///@brief current pulse width in microseconds for this servo (was read_us() in first release)
-    ///@return microseconds
-    int readMicroseconds();
-    ///@brief true if this servo is attached, otherwise false
-    bool attached();
-private:
-    ///@brief index into the channel data for this servo
-    uint8_t servoIndex;
-    ///@brief minimum is this value times 4 added to MIN_PULSE_WIDTH
-    int8_t min;
-    ///@brief maximum is this value times 4 added to MAX_PULSE_WIDTH
-    int8_t max;
-    int servoPin;
+///@brief Class for Encoder Motor Driver
+class MeEncoderMotor: public MeWire{
+    public:
+        MeEncoderMotor(uint8_t addr,uint8_t slot);
+        void begin();
+        boolean Reset();
+        boolean Move(float angle, float speed);
+        boolean MoveTo(float angle, float speed);
+        boolean RunTurns(float turns, float speed);
+        boolean RunSpeed(float speed);
+        boolean RunSpeedAndTime(float speed, float time);
+        float GetCurrentSpeed();
+        float GetCurrentPosition();
+    private:
+        uint8_t _slot;    
 };
 
-
-/*Me4Button*/
+///@brief Class for Button Module
 class Me4Button: public MePort
 {
 public:
+    Me4Button();
     Me4Button(uint8_t port);
     uint8_t pressed();
-    uint8_t released();
-
-protected:
-    uint16_t _toggleState, _oldState;
-    uint8_t _pressedState,_prevPressedState, _releasedState;
-    uint8_t _heldState;
-    bool update();
-    int _heldTime;
-    int _millisMark;
-
 };
 
-/*      Joystick        */
-
+///@brief Class for Joystick Module
 class MeJoystick : public MePort
 {
 public:
+    MeJoystick();
     MeJoystick(uint8_t port);
+    ///@brief get the value of x-axis
     int readX();
+    ///@brief get the value of y-axis
     int readY();
-	float angle();
-	float strength();
+    float angle();
+    float strength();
 };
-/*      Light Sensor         */
-
+///@brief Class for Light Sensor Module
 class MeLightSensor : public MePort
 {
 public:
+    MeLightSensor();
     MeLightSensor(uint8_t port);
+    ///@brief get the value of light intensity
     int read();
-	void lightOn();
-	void lightOff();
+    ///@brief turn on the led.
+    void lightOn();
+    ///@brief turn off the led.
+    void lightOff();
     float strength();
 };
 
-/*      Light Sensor         */
-
+///@brief Class for Sound Sensor Module
 class MeSoundSensor : public MePort
 {
 public:
+    MeSoundSensor();
     MeSoundSensor(uint8_t port);
-    bool Dread();
-    int Aread();
+    ///@brief get the value of sound intensity
+    int strength();
+};
+class MeOneWire
+{
+private:
+    MeIO_REG_TYPE bitmask;
+    volatile MeIO_REG_TYPE *baseReg;
+    // global search state
+    unsigned char ROM_NO[8];
+    uint8_t LastDiscrepancy;
+    uint8_t LastFamilyDiscrepancy;
+    uint8_t LastDeviceFlag;
+
+
+public:
+    MeOneWire();
+    MeOneWire( uint8_t pin);
+    bool readIO(void);
+    void reset(uint8_t pin);
+    // Perform a 1-Wire reset cycle. Returns 1 if a device responds
+    // with a presence pulse.  Returns 0 if there is no device or the
+    // bus is shorted or otherwise held low for more than 250uS
+    uint8_t reset(void);
+
+    // Issue a 1-Wire rom select command, you do the reset first.
+    void select(const uint8_t rom[8]);
+
+    // Issue a 1-Wire rom skip command, to address all on bus.
+    void skip(void);
+
+    // Write a byte. If 'power' is one then the wire is held high at
+    // the end for parasitically powered devices. You are responsible
+    // for eventually depowering it by calling depower() or doing
+    // another read or write.
+    void write(uint8_t v, uint8_t power = 0);
+
+    void write_bytes(const uint8_t *buf, uint16_t count, bool power = 0);
+
+    // Read a byte.
+    uint8_t read(void);
+
+    void read_bytes(uint8_t *buf, uint16_t count);
+
+    // Write a bit. The bus is always left powered at the end, see
+    // note in write() about that.
+    void write_bit(uint8_t v);
+
+    // Read a bit.
+    uint8_t read_bit(void);
+
+    // Stop forcing power onto the bus. You only need to do this if
+    // you used the 'power' flag to write() or used a write_bit() call
+    // and aren't about to do another read or write. You would rather
+    // not leave this powered if you don't have to, just in case
+    // someone shorts your bus.
+    void depower(void);
+
+    // Clear the search state so that if will start from the beginning again.
+    void reset_search();
+
+    // Setup the search to find the device type 'family_code' on the next call
+    // to search(*newAddr) if it is present.
+    void target_search(uint8_t family_code);
+
+    // Look for the next device. Returns 1 if a new address has been
+    // returned. A zero might mean that the bus is shorted, there are
+    // no devices, or you have already retrieved all of them.  It
+    // might be a good idea to check the CRC to make sure you didn't
+    // get garbage.  The order is deterministic. You will always get
+    // the same devices in the same order.
+    uint8_t search(uint8_t *newAddr);
+};
+///@brief Class for temperature sensor
+class MeTemperature: public MePort
+{
+public:
+    MeTemperature();
+    MeTemperature(uint8_t port);
+    MeTemperature(uint8_t port, uint8_t slot);
+    void reset(uint8_t port, uint8_t slot);
+    ///@brief get the celsius of temperature
+    float temperature();
+private:
+    MeOneWire _ts;
+};
+//************definitions for TM1637*********************
+#define ADDR_AUTO  0x40
+#define ADDR_FIXED 0x44
+
+#define STARTADDR  0xc0
+/**** definitions for the clock point of the digit tube *******/
+#define POINT_ON   1
+#define POINT_OFF  0
+/**************definitions for brightness***********************/
+#define  BRIGHT_DARKEST 0
+#define  BRIGHT_TYPICAL 2
+#define  BRIGHTEST      7
+///@brief Class for numeric display module
+class Me7SegmentDisplay: public MePort
+{
+public:
+    Me7SegmentDisplay();
+    Me7SegmentDisplay(uint8_t port);
+    void init(void);        //To clear the display
+    void set(uint8_t = BRIGHT_TYPICAL, uint8_t = 0x40, uint8_t = 0xc0); //To take effect the next time it displays.
+    void reset(uint8_t port);
+    void write(int8_t SegData[]);
+    void write(uint8_t BitAddr, int8_t SegData);
+    void display(uint16_t value);
+    void display(int16_t value);
+    void display(double value, uint8_t = 1) ;
+    void display(int8_t DispData[]);
+    void display(uint8_t BitAddr, int8_t DispData);
+    void clearDisplay(void);
+private:
+    uint8_t Cmd_SetData;
+    uint8_t Cmd_SetAddr;
+    uint8_t Cmd_DispCtrl;
+    boolean _PointFlag;     //_PointFlag=1:the clock point on
+    void writeByte(int8_t wr_data);//write 8bit data to tm1637
+    void start(void);//send start bits
+    void stop(void); //send stop bits
+    void point(boolean PointFlag);//whether to light the clock point ":".To take effect the next time it displays.
+    void coding(int8_t DispData[]);
+    int8_t coding(int8_t DispData);
+    uint8_t Clkpin;
+    uint8_t Datapin;
+};
+///@brief Class for potentiometer
+class MePotentiometer: public MePort
+{
+public:
+    MePotentiometer();
+    MePotentiometer(uint8_t port);
+    uint16_t read();
 };
 
+///@brief Class for PIR Motion Sensor
+class MePIRMotionSensor: public MePort
+{
+public:
+    MePIRMotionSensor();
+    MePIRMotionSensor(uint8_t port);
+    bool isPeopleDetected();
+};
 
+///@brief Class for gyro sensor
+class MeGyro
+{
+public:
+    MeGyro();
+    void begin();
+    void update();
+    double angleX();
+    double angleY();
+    double angleZ();
+private:
+    void calibrate();
+    int readData(int start, uint8_t *buffer, int size);
+    int writeData(int start, const uint8_t *pData, int size);
+    int writeReg(int reg, uint8_t data);
+
+    double gSensitivity; // for 500 deg/s, check data sheet
+    double gx, gy, gz;
+    double gyrX, gyrY, gyrZ;
+    int16_t accX, accY, accZ;
+    double gyrXoffs, gyrYoffs, gyrZoffs;
+    double FREQ;
+    uint8_t i2cData[14];
+};
 #endif

@@ -1,13 +1,12 @@
 /*************************************************************************
 * File Name          : TestServoDriver.ino
 * Author             : Evan
-* Updated            : Evan
+* Updated            : xiayu
 * Version            : V1.0.1
-* Date               : 5/17/2013
-* Description        : Test for Makeblock Electronic modules of Me -Servo 
-                       Driver. The module can only be connected to the 
-                       port 1, 2 of Me - Base Shield. One module can drive 
-                       two servos.
+* Date               : 6/23/2013
+* Description        :  Using Me Servo Driver module connecting two servos.
+                        The module only can be connected to  PORT_1 and PORT_2 .
+                        
 * License            : CC-BY-SA 3.0
 * Copyright (C) 2013 Maker Works Technology Co., Ltd. All right reserved.
 * http://www.makeblock.cc/
@@ -17,20 +16,22 @@
 #include <SoftwareSerial.h>
 #include <Wire.h>
 
-/*
-Class Me_ServoDriver has most of the functions from class Servo, 
-see Me_ServoDriver.h for more details.
-*/
+//Parts required:Me Servo Driver and two servo 	
+//Me Servo Driver PWM1 connect servo1,PWM2connect servo2
 
-MeServo servoDriver1(PORT_1,DEV1);//can ONLY be PORT_1,PORT_2
-MeServo servoDriver2(PORT_1,DEV2);
+#include <Servo.h> //include the Servo library;
+MePort port(PORT_1);
+Servo servoDriver1;  // create servo object to control a servo 
+Servo servoDriver2;  // create servo object to control another servo
+int servo2pin =  port.pin1();//attaches the servo on PORT_1 SLOT1 to the servo object
+int servo1pin =  port.pin2();//attaches the servo on PORT_1 SLOT2 to the servo object
 
 int pos1 = 0;
 int pos2 = 180;
 void setup()
 {
-    servoDriver1.begin();
-    servoDriver2.begin();
+  servoDriver1.attach(servo1pin);  // attaches the servo on servopin1
+  servoDriver2.attach(servo2pin);  // attaches the servo on servopin2
 }
 
 void loop()
